@@ -56,7 +56,7 @@ describe('ProductService', () => {
     productService = new ProductService(productModel);
   });
 
-  test('create',() => {
+  describe('create',() => {
     it('should be create product data', async () => {
       const expectedSlug = product.name.split('-').join('-');
       const res = await productService.create(product);
@@ -65,7 +65,7 @@ describe('ProductService', () => {
     });
   });
 
-  test('findById', () => {
+  describe('findById', () => {
     it('should be return product find by id', async () => {
       const assertion = await productService.create(product);
       const res = await productService.findById(assertion._id);
@@ -84,7 +84,7 @@ describe('ProductService', () => {
     });
   });
 
-  test('findByIdAndUpdate', () => {
+  describe('findByIdAndUpdate', () => {
     it('should be error if product not found', async () => {
       const assertion = await productService.create(product);
       await expect(
@@ -105,7 +105,7 @@ describe('ProductService', () => {
     });
   });
 
-  test('findByIdAndUpdate', () => {
+  describe('findByIdAndUpdate', () => {
     it('should be deleted product', async () => {
       const assertion = await productService.create(product);
       const res = await productService.findByIdAndDelete(assertion._id);
