@@ -39,7 +39,7 @@ export class ProductController {
 
       return res.status(200).json({ status: 'success', data: product });
     } catch (err) {
-      this.logger.error(err.message, err?.stack);
+      this.logger.log(err?.message, err?.stack, err?.name);
       if (err instanceof HttpException) {
         throw err;
       } else {
@@ -64,13 +64,15 @@ export class ProductController {
 
       if (!product) {
         product = await this.productService.findById(id);
-        await this.redisService.set(product.id, product, 300);
+        if(product) {
+          await this.redisService.set(product.id, product, 300);
+        }
         cache = false;
       }
 
       return res.status(200).json({ status: 'success', cache, data: product });
     } catch (err) {
-      this.logger.error(err.message, err?.stack);
+      this.logger.log(err?.message, err?.stack, err?.name);
       if (err instanceof HttpException) {
         throw err;
       } else {
@@ -94,12 +96,13 @@ export class ProductController {
         );
       }
 
-      await this.redisService.del(id);
       const product = await this.productService.FindByIdAndUpdate(id, body);
-
+      if (product) {
+        await this.redisService.del(id);
+      } 
       return res.status(200).json({ status: 'success', data: product });
     } catch (err) {
-      this.logger.error(err.message, err?.stack);
+      this.logger.log(err?.message, err?.stack, err?.name);
       if (err instanceof HttpException) {
         throw err;
       } else {
@@ -123,7 +126,7 @@ export class ProductController {
 
       return res.status(200).json({ deleted: deleted || false });
     } catch (err) {
-      this.logger.error(err.message, err?.stack);
+      this.logger.log(err?.message, err?.stack, err?.name);
       if (err instanceof HttpException) {
         throw err;
       } else {

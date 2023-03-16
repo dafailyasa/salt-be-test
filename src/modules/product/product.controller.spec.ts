@@ -174,7 +174,7 @@ describe('Product Controller', () => {
       });
 
       it('should be error if invalid id', async () => {
-        const randomId = '6412a0aff3f9845140523613';
+        const randomId = '1-random-id';
 
         await expect(
           productController.findProductById(response, randomId),
@@ -224,6 +224,27 @@ describe('Product Controller', () => {
             expect(id).not.toBeNull();
             expect(product).not.toBeNull();
             return Promise.reject('failed update product');
+          });
+
+        await expect(
+          productController.updateProduct(response, assertion, assertion._id),
+        ).rejects.toThrowError(HttpException);
+      });
+
+      it('should be no updated product if not found', async () => {
+        Object.assign(product, { slug: slug(product.name) });
+        const assertion = await productModel.create(product);
+
+        assertion.name = 't-shirt terbaru updated';
+        assertion.status = Status.Avaliable;
+        assertion.longDesc = 'long desc updated';
+
+        jest
+          .spyOn(productService, 'FindByIdAndUpdate')
+          .mockImplementation(async (id, product) => {
+            expect(id).not.toBeNull();
+            expect(product).not.toBeNull();
+            return Promise.reject(null);
           });
 
         await expect(
