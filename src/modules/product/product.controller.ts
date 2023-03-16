@@ -15,19 +15,21 @@ import {
   Patch,
   HttpStatus,
   Delete,
+  Logger,
 } from '@nestjs/common';
 import { Response } from 'express';
-import {  ProductDto } from './product.dto';
+import { ProductDto } from './product.dto';
 import { ProductService } from './product.service';
 import { ObjectId } from 'mongodb';
 import { RedisService } from '../redis/redis.service';
-
 @Controller('products')
 export class ProductController {
   constructor(
     private redisService: RedisService,
     private readonly productService: ProductService,
   ) {}
+
+  private readonly logger = new Logger(ProductController.name);
 
   @UsePipes(new ValidationPipe({ transform: true }))
   @Post('')
@@ -37,6 +39,7 @@ export class ProductController {
 
       return res.status(200).json({ status: 'success', data: product });
     } catch (err) {
+      this.logger.error(err.message, err?.stack);
       if (err instanceof HttpException) {
         throw err;
       } else {
@@ -67,6 +70,7 @@ export class ProductController {
 
       return res.status(200).json({ status: 'success', cache, data: product });
     } catch (err) {
+      this.logger.error(err.message, err?.stack);
       if (err instanceof HttpException) {
         throw err;
       } else {
@@ -95,6 +99,7 @@ export class ProductController {
 
       return res.status(200).json({ status: 'success', data: product });
     } catch (err) {
+      this.logger.error(err.message, err?.stack);
       if (err instanceof HttpException) {
         throw err;
       } else {
@@ -116,8 +121,9 @@ export class ProductController {
       const deleted = await this.productService.findByIdAndDelete(id);
       if (deleted) await this.redisService.del(id);
 
-      return res.status(200).json({deleted: deleted || false});
+      return res.status(200).json({ deleted: deleted || false });
     } catch (err) {
+      this.logger.error(err.message, err?.stack);
       if (err instanceof HttpException) {
         throw err;
       } else {

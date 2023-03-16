@@ -46,7 +46,7 @@ export class ProductService {
     if (!existingProduct)
       throw new HttpException('product not found', HttpStatus.NOT_FOUND);
 
-    existingProduct.remove();
+    await this.productModel.deleteOne({ _id: id });
     return true;
   }
 }

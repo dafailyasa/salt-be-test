@@ -1,9 +1,17 @@
 import { Test } from '@nestjs/testing';
-import { Model } from "mongoose";
-import { ProductService } from "./product.service";
-import { ProductModel, ProductProp, ProductSchema, Status } from "./product.model";
-import { ProductController } from "./product.controller";
-import { closeInMongodConnection, rootMongooseTestModule } from "../../../test/modules/mongooseTestModule";
+import { Model } from 'mongoose';
+import { ProductService } from './product.service';
+import {
+  ProductModel,
+  ProductProp,
+  ProductSchema,
+  Status,
+} from './product.model';
+import { ProductController } from './product.controller';
+import {
+  closeInMongodConnection,
+  rootMongooseTestModule,
+} from '../../../test/modules/mongooseTestModule';
 import { getModelToken, MongooseModule } from '@nestjs/mongoose';
 import { RedisService } from '../redis/redis.service';
 import { ProductDto } from './product.dto';
@@ -14,20 +22,17 @@ const response: any = {
   status: (code: number) => response,
 };
 
-const slug = (name:string): string => {
+const slug = (name: string): string => {
   return name.split('-').join('-');
-}
+};
 
 const product: ProductDto = {
-  name: "t-shirt bulls",
+  name: 't-shirt bulls',
   shortDesc: 'short desc',
   longDesc: 'long desc',
   discount: 10,
   stock: 1,
-  images: [
-    'https://testimage.com/image-1',
-    'https://testimage.com/image-2'
-  ],
+  images: ['https://testimage.com/image-1', 'https://testimage.com/image-2'],
   status: Status.Draft,
   price: 10000,
   dimension: {
@@ -35,8 +40,8 @@ const product: ProductDto = {
     weight: 4,
     height: 1,
     width: 12,
-  }
-}
+  },
+};
 
 describe('Product Controller', () => {
   let productService: ProductService;
@@ -61,94 +66,109 @@ describe('Product Controller', () => {
         {
           provide: ProductService,
           useValue: {
-            create: jest.fn().mockImplementation(async (product: ProductProp) => {
-              Object.assign(product, {slug: slug(product.name)})
-              const res = await productModel.create(product);
-              return res;
-            }),
+            create: jest
+              .fn()
+              .mockImplementation(async (product: ProductProp) => {
+                Object.assign(product, { slug: slug(product.name) });
+                const res = await productModel.create(product);
+                return res;
+              }),
             findById: jest.fn().mockImplementation(async (id: string) => {
               const res = await productModel.findById(id);
               return res;
             }),
-            FindByIdAndUpdate: jest.fn().mockImplementation(async (id: string, product: ProductProp) => {
-              return await productModel
-                .findByIdAndUpdate(id, product, { new: true })
-                .exec();
-            }),
-            findByIdAndDelete: jest.fn().mockImplementation(async (id: string) => {
-              return true;
-            })
-          }
+            FindByIdAndUpdate: jest
+              .fn()
+              .mockImplementation(async (id: string, product: ProductProp) => {
+                return await productModel
+                  .findByIdAndUpdate(id, product, { new: true })
+                  .exec();
+              }),
+            findByIdAndDelete: jest
+              .fn()
+              .mockImplementation(async (id: string) => {
+                return true;
+              }),
+          },
         },
         {
           provide: RedisService,
-          useValue:{
-            set: jest.fn().mockImplementation(async (key:string, data:any, expired:number) => {
+          useValue: {
+            set: jest
+              .fn()
+              .mockImplementation(
+                async (key: string, data: any, expired: number) => {
+                  expect(key).not.toBeNull();
+                  expect(expired).not.toBeNull();
+                  expect(data).not.toBeNull();
+                  return Promise.resolve(true);
+                },
+              ),
+            get: jest.fn().mockImplementation(async (key: string) => {
               expect(key).not.toBeNull();
-              expect(expired).not.toBeNull()
-              expect(data).not.toBeNull();
+              return Promise.resolve(null);
+            }),
+            del: jest.fn().mockImplementation(async (key: string) => {
+              expect(key).not.toBeNull();
               return Promise.resolve(true);
             }),
-            get: jest.fn().mockImplementation(async (key:string) => {
-              expect(key).not.toBeNull();
-              return Promise.resolve(null)
-            }),
-            del: jest.fn().mockImplementation(async (key:string) => {
-              expect(key).not.toBeNull();
-              return Promise.resolve(true)
-            }),
-          }
-        }
-      ]
-    }).compile()
+          },
+        },
+      ],
+    }).compile();
 
     productService = moduleRef.get<ProductService>(ProductService);
     redisService = moduleRef.get<RedisService>(RedisService);
     productModel = moduleRef.get<Model<ProductModel>>(
-      getModelToken('ProductModel')
+      getModelToken('ProductModel'),
     );
 
     productController = new ProductController(redisService, productService);
   });
 
-
-  describe('createProduct',() => {
+  describe('createProduct', () => {
     it('should be create product', async () => {
-      const res = await productController.createProduct( product,response);
+      const res = await productController.createProduct(product, response);
 
       expect(res).toHaveProperty('data');
-      expect(res).toHaveProperty('status','success');
+      expect(res).toHaveProperty('status', 'success');
     });
 
     it('should be error if failed to create product', async () => {
       jest.spyOn(productService, 'create').mockImplementation(() => {
-        throw new Error("Failed crete product");
+        throw new Error('Failed crete product');
       });
-      
+
       await expect(
-        productController.createProduct( product,response)
+        productController.createProduct(product, response),
       ).rejects.toThrowError(HttpException);
     });
 
     describe('findProductById', () => {
       it('should be find product by id on db and set to redis ', async () => {
-        Object.assign(product, {slug: slug(product.name)});
+        Object.assign(product, { slug: slug(product.name) });
         const assertion = await productModel.create(product);
-        const res = await productController.findProductById(response, assertion._id);
+        const res = await productController.findProductById(
+          response,
+          assertion._id,
+        );
         expect(res).toHaveProperty('data._id', assertion._id);
         expect(res).toHaveProperty('cache', false);
       });
 
       it('should be find product by id with in redis ', async () => {
-        Object.assign(product, {slug: slug(product.name)});
+        Object.assign(product, { slug: slug(product.name) });
         const assertion = await productModel.create(product);
 
         jest.spyOn(redisService, 'get').mockImplementation(async (key) => {
-          expect(key).not.toBeNull()
+          expect(key).not.toBeNull();
           return Promise.resolve(assertion);
         });
 
-        const res = await productController.findProductById(response, assertion._id);
+        const res = await productController.findProductById(
+          response,
+          assertion._id,
+        );
         expect(res).toHaveProperty('data._id', assertion._id);
         expect(res).toHaveProperty('cache', true);
       });
@@ -157,7 +177,7 @@ describe('Product Controller', () => {
         const randomId = '6412a0aff3f9845140523613';
 
         await expect(
-          productController.findProductById(response, randomId)
+          productController.findProductById(response, randomId),
         ).rejects.toThrowError(HttpException);
       });
     });
@@ -166,19 +186,23 @@ describe('Product Controller', () => {
       it('should be error if invalid id', async () => {
         const randomId = '1-random-id';
         await expect(
-          productController.updateProduct(response, product, randomId)
+          productController.updateProduct(response, product, randomId),
         ).rejects.toThrowError(HttpException);
       });
 
       it('should be update products', async () => {
-        Object.assign(product, {slug: slug(product.name)});
+        Object.assign(product, { slug: slug(product.name) });
         const assertion = await productModel.create(product);
 
         assertion.name = 't-shirt terbaru updated';
         assertion.status = Status.Avaliable;
         assertion.longDesc = 'long desc updated';
 
-        const res = await productController.updateProduct(response, assertion, assertion._id);
+        const res = await productController.updateProduct(
+          response,
+          assertion,
+          assertion._id,
+        );
 
         expect(res).toHaveProperty('data.name', slug(assertion.name));
         expect(res).toHaveProperty('data.status', Status.Avaliable);
@@ -187,21 +211,23 @@ describe('Product Controller', () => {
       });
 
       it('should be failed to update product', async () => {
-        Object.assign(product, {slug: slug(product.name)});
+        Object.assign(product, { slug: slug(product.name) });
         const assertion = await productModel.create(product);
 
         assertion.name = 't-shirt terbaru updated';
         assertion.status = Status.Avaliable;
         assertion.longDesc = 'long desc updated';
 
-        jest.spyOn(productService, 'FindByIdAndUpdate').mockImplementation(async (id, product) => {
-          expect(id).not.toBeNull()
-          expect(product).not.toBeNull()
-          return Promise.reject("failed update product");
-        });
+        jest
+          .spyOn(productService, 'FindByIdAndUpdate')
+          .mockImplementation(async (id, product) => {
+            expect(id).not.toBeNull();
+            expect(product).not.toBeNull();
+            return Promise.reject('failed update product');
+          });
 
         await expect(
-          productController.updateProduct(response, assertion, assertion._id)
+          productController.updateProduct(response, assertion, assertion._id),
         ).rejects.toThrowError(HttpException);
       });
     });
@@ -210,31 +236,40 @@ describe('Product Controller', () => {
       it('should be error if invalid id', async () => {
         const randomId = '1-random-id';
         await expect(
-          productController.removeProduct(response, randomId)
+          productController.removeProduct(response, randomId),
         ).rejects.toThrowError(HttpException);
       });
 
       it('should be deleted product', async () => {
-        Object.assign(product, {slug: slug(product.name)});
+        Object.assign(product, { slug: slug(product.name) });
         const assertion = await productModel.create(product);
 
-        const res = await productController.removeProduct(response, assertion._id);
+        const res = await productController.removeProduct(
+          response,
+          assertion._id,
+        );
         expect(res).toHaveProperty('deleted', true);
       });
 
       it('should be failed to delete if not found product', async () => {
-        Object.assign(product, {slug: slug(product.name)});
+        Object.assign(product, { slug: slug(product.name) });
         const assertion = await productModel.create(product);
 
-        jest.spyOn(productService, 'findByIdAndDelete').mockImplementation(async (id) => {
-          expect(id).not.toBeNull()
-          return null;
-        });
+        jest
+          .spyOn(productService, 'findByIdAndDelete')
+          .mockImplementation(async (id) => {
+            expect(id).not.toBeNull();
+            return null;
+          });
 
         await expect(
-          productController.updateProduct(response, assertion, assertion._id + 1)
+          productController.updateProduct(
+            response,
+            assertion,
+            assertion._id + 1,
+          ),
         ).rejects.toThrowError(HttpException);
       });
-    })
+    });
   });
 });

@@ -6,7 +6,6 @@ import { ConfigModule, ConfigService } from '@nestjs/config';
 import { AppController } from './app.controller';
 import { MongooseModule } from '@nestjs/mongoose';
 import configuration from './config/configuration';
-import { AppLoggerMiddleware } from './common/middlewares/logger.middleware';
 import { ThrottlerGuard, ThrottlerModule } from '@nestjs/throttler';
 import { APP_GUARD } from '@nestjs/core';
 
@@ -25,15 +24,10 @@ import { APP_GUARD } from '@nestjs/core';
     MongooseModule.forRootAsync({
       imports: [ConfigModule],
       useFactory: async (configService: ConfigService) => ({
-        uri: configService.get<string>('mongodb.uri'),
-        connectTimeoutMS: configService.get('mongodb.connectionTimeout'),
-        socketTimeoutMS: configService.get('mongodb.socketTimeout'),
-        retryAttempts: configService.get('mongodb.retryAttempts'),
-        autoIndex: true,
-        useUnifiedTopology: true,
-        useNewUrlParser: true,
-        useFindAndModify: false,
-        useCreateIndex: true,
+        uri: 'mongodb+srv://dafailyasa30:maYz4XqF9dFIOoq4@cluster.7tpbfok.mongodb.net/test',
+        // connectTimeoutMS: configService.get('mongodb.connectionTimeout'),
+        // socketTimeoutMS: configService.get('mongodb.socketTimeout'),
+        // retryAttempts: configService.get('mongodb.retryAttempts'),
       }),
       inject: [ConfigService],
     }),
@@ -47,8 +41,4 @@ import { APP_GUARD } from '@nestjs/core';
     },
   ],
 })
-export class AppModule {
-  configure(consumer: MiddlewareConsumer): void {
-    consumer.apply(AppLoggerMiddleware).forRoutes('*');
-  }
-}
+export class AppModule {}
