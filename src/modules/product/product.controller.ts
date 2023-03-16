@@ -15,14 +15,12 @@ import {
   Patch,
   HttpStatus,
   Delete,
-  UseGuards,
 } from '@nestjs/common';
 import { Response } from 'express';
-import { FindByIdsDto, ProductDto } from './product.dto';
+import {  ProductDto } from './product.dto';
 import { ProductService } from './product.service';
 import { ObjectId } from 'mongodb';
 import { RedisService } from '../redis/redis.service';
-import { ThrottlerGuard } from '@nestjs/throttler';
 
 @Controller('products')
 export class ProductController {
@@ -31,7 +29,6 @@ export class ProductController {
     private readonly productService: ProductService,
   ) {}
 
-  @UseGuards(ThrottlerGuard)
   @UsePipes(new ValidationPipe({ transform: true }))
   @Post('')
   async createProduct(@Body() body: ProductDto, @Res() res: Response) {
@@ -48,7 +45,6 @@ export class ProductController {
     }
   }
 
-  @UseGuards(ThrottlerGuard)
   @Get('/:id')
   async findProductById(@Res() res: Response, @Param('id') id: string) {
     try {
@@ -79,7 +75,6 @@ export class ProductController {
     }
   }
 
-  @UseGuards(ThrottlerGuard)
   @UsePipes(new ValidationPipe({ transform: true }))
   @Patch('/:id')
   async updateProduct(
@@ -95,8 +90,8 @@ export class ProductController {
         );
       }
 
+      await this.redisService.del(id);
       const product = await this.productService.FindByIdAndUpdate(id, body);
-      if (product) await this.redisService.del(id);
 
       return res.status(200).json({ status: 'success', data: product });
     } catch (err) {
@@ -108,7 +103,6 @@ export class ProductController {
     }
   }
 
-  @UseGuards(ThrottlerGuard)
   @Delete('/:id')
   async removeProduct(@Res() res: Response, @Param('id') id: string) {
     try {
@@ -122,7 +116,7 @@ export class ProductController {
       const deleted = await this.productService.findByIdAndDelete(id);
       if (deleted) await this.redisService.del(id);
 
-      return res.status(204).json();
+      return res.status(200).json({deleted: deleted || false});
     } catch (err) {
       if (err instanceof HttpException) {
         throw err;

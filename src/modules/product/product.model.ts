@@ -1,5 +1,4 @@
 import { Prop, Schema, SchemaFactory } from '@nestjs/mongoose';
-import { prototype } from 'events';
 import { Document } from 'mongoose';
 
 export enum Status {
