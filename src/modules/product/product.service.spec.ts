@@ -87,6 +87,8 @@ describe('ProductService', () => {
   describe('findByIdAndUpdate', () => {
     it('should be error if product not found', async () => {
       const assertion = await productService.create(product);
+      await productService.findByIdAndDelete(assertion._id);
+
       await expect(
         productService.FindByIdAndUpdate(assertion._id, product)
       ).rejects.toThrowError(HttpException)
@@ -114,6 +116,8 @@ describe('ProductService', () => {
 
     it('should no deleted product if not found', async () => {
       const assertion = await productService.create(product);
+      await productService.findByIdAndDelete(assertion._id);
+
       await expect(
         productService.findByIdAndDelete(assertion._id)
       ).rejects.toThrowError(HttpException);
