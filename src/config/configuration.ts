@@ -6,7 +6,6 @@ let mongoUri = process.env.MONGODB_USER
 if (process.env.MONGODB_AUTHSOURCE) {
   mongoUri = `${mongoUri}&authSource=${process.env.MONGODB_AUTHSOURCE}`;
 }
-
 export default () => {
   return {
     env: process.env.NODE_ENV,

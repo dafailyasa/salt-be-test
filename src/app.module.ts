@@ -24,10 +24,10 @@ import { APP_GUARD } from '@nestjs/core';
     MongooseModule.forRootAsync({
       imports: [ConfigModule],
       useFactory: async (configService: ConfigService) => ({
-        uri: 'mongodb+srv://dafailyasa30:maYz4XqF9dFIOoq4@cluster.7tpbfok.mongodb.net/test',
-        // connectTimeoutMS: configService.get('mongodb.connectionTimeout'),
-        // socketTimeoutMS: configService.get('mongodb.socketTimeout'),
-        // retryAttempts: configService.get('mongodb.retryAttempts'),
+        uri: configService.get('mongodb.uri'),
+        connectTimeoutMS: configService.get('mongodb.connectionTimeout'),
+        socketTimeoutMS: configService.get('mongodb.socketTimeout'),
+        retryAttempts: configService.get('mongodb.retryAttempts'),
       }),
       inject: [ConfigService],
     }),
